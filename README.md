@@ -1,4 +1,4 @@
-RVcore Project
+# RVcore VLSI Chip Project
 
 RISC-V is a RISC-based open instruction set architecture.
 The basic 32-bit integer instruction set in RISC-V is defined as RV32I.
