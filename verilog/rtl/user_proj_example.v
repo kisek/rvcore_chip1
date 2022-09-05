@@ -35,6 +35,7 @@
  *-------------------------------------------------------------
  */
 
+
 module user_proj_example #(
     parameter BITS = 32
 )(
@@ -71,10 +72,6 @@ module user_proj_example #(
     wire clk;
     wire rst;
 
-    wire [`MPRJ_IO_PADS-1:0] io_in;
-    wire [`MPRJ_IO_PADS-1:0] io_out;
-    wire [`MPRJ_IO_PADS-1:0] io_oeb;
-
     wire [31:0] rdata; 
     wire [31:0] wdata;
     wire [BITS-1:0] count;
@@ -89,10 +86,6 @@ module user_proj_example #(
     assign wbs_dat_o = rdata;
     assign wdata = wbs_dat_i;
 
-    // IO
-    assign io_out = count;
-    assign io_oeb = {(`MPRJ_IO_PADS-1){rst}};
-
     // IRQ
     assign irq = 3'b000;	// Unused
 
@@ -103,6 +96,29 @@ module user_proj_example #(
     // Assuming LA probes [65:64] are for controlling the count clk & reset  
     assign clk = (~la_oenb[64]) ? la_data_in[64]: wb_clk_i;
     assign rst = (~la_oenb[65]) ? la_data_in[65]: wb_rst_i;
+
+    ////////////////////////////////////////////////////////////////////////
+    // IO[0]   : input  w_rst
+    // IO[1]   : input  w_rxd
+    // IO[2]   : output w_led[0]
+    // IO[3]   : output w_led[1]
+    // IO[4]   : output w_led[2]
+    // IO[5]   : output w_led[3]
+    // IO[6]   : output w_txt
+    // IO[:7]  : output count
+    wire [`MPRJ_IO_PADS-1:0] io_in;
+    wire [`MPRJ_IO_PADS-1:0] io_out;
+    wire [`MPRJ_IO_PADS-1:0] io_oeb;
+    assign io_oeb = {{36{1'b0}}, {2{1'b1}}}; // 36bit output + 2bit input = 38bit
+
+    wire w_rst = io_in[0];
+    wire w_rxd = io_in[1];
+    assign io_out[37:2] = {count[30:0], w_txd, w_led}; // 31 + 1 + 4 = 36bit
+    //  assign io_oeb = {(`MPRJ_IO_PADS-1){rst}};
+
+    wire w_txd;
+    wire [3:0] w_led;
+    rvcorep rvc1(clk, w_rst, w_rxd, w_txd, w_led);
 
     counter #(
         .BITS(BITS)
@@ -118,8 +134,8 @@ module user_proj_example #(
         .la_input(la_data_in[63:32]),
         .count(count)
     );
-
 endmodule
+
 
 module counter #(
     parameter BITS = 32
@@ -162,4 +178,5 @@ module counter #(
     end
 
 endmodule
-`default_nettype wire
+
+
